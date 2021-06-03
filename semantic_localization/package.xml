@@ -9,16 +9,15 @@
 
   <maintainer email="MatthijsBurgh@outlook.com">Matthijs van der Burgh</maintainer>
 
-
   <license>BSD-2-Clause</license>
 
   <url type="bugtracker">https://github.com/MatthijsBurgh/semantic_localization/issues</url>
   <url type="repository">https://github.com/MatthijsBurgh/semantic_localization.git</url>
 
-
   <author email="MatthijsBurgh@outlook.com">Matthijs van der Burgh</author>
 
-
   <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>rospy</depend>
 
 </package>
