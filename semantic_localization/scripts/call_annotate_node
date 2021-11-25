@@ -1,0 +1,37 @@
+#! /usr/bin/env python
+
+import cv2
+import numpy as np
+
+from detectron2.data.detection_utils import read_image
+
+import rospy
+from tue_msgs.srv import GetMaskedImage, GetMaskedImageRequest, GetMaskedImageResponse
+
+from semantic_localization.utils.conversions import _get_cv_bridge
+
+if __name__ == "__main__":
+    image = read_image("/home/matthijs/Pictures/vlcsnap-2021-11-22-13h17m11s628.png")
+
+    srv_proxy = rospy.ServiceProxy("annotate", GetMaskedImage)
+
+    req = GetMaskedImageRequest()
+    cv_bridge = _get_cv_bridge()
+    req.input_image = cv_bridge.cv2_to_imgmsg(image, encoding="bgr8")
+    res = srv_proxy.call(req)  # type: GetMaskedImageResponse
+
+    image = cv_bridge.imgmsg_to_cv2(res.output_image.image)  # type: np.ndarray
+    if image.dtype == "uint8":
+        max_value = min(image[image < 255].max(), 254)  # Ignore 255 as that is reserved for not labeled
+        if max_value * 10 >= 255:
+            image = image.astype("uint16")
+            image *= 10
+            image[image == 2550] = 65535
+        else:
+            image = image.copy()
+            image *= 10
+
+    print(f"Detected labels are: {res.output_image.labels}")
+    cv2.imshow("Requested image", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
