@@ -1,0 +1,105 @@
+#! /usr/bin/env python
+
+import argparse
+import multiprocessing as mp
+import os
+
+from detectron2.config import get_cfg
+from detectron2.utils.logger import setup_logger
+
+import rospy
+
+from semantic_localization.utils.detectron2 import D2AnnotatorNode
+
+
+def resolve_args_config_file(args: argparse.Namespace) -> argparse.Namespace:
+    config_file = args.config_file
+    if os.path.isabs(config_file):
+        return args
+
+    abs_config_file = os.path.abspath(config_file)
+    if os.path.isfile(abs_config_file):
+        rospy.logdebug(f"Resolved config '{config_file}' to absolute path '{abs_config_file}'")
+        args.config_file = abs_config_file
+        return args
+
+    detectron2_config_file = os.path.join(os.path.expanduser(args.detectron2_root), config_file)
+    if os.path.isfile(detectron2_config_file):
+        rospy.logdebug(f"Resolved config '{config_file}' to detectron2 config '{detectron2_config_file}'")
+        args.config_file = detectron2_config_file
+        return args
+
+    raise ValueError(f"'{config_file}' is not an absolute path and could not be resolved to an existing file")
+
+
+def setup_cfg(args):
+    # load config from file and command-line arguments
+    cfg = get_cfg()
+
+    # To use demo for Panoptic-DeepLab, please uncomment the following two lines.
+    # from detectron2.projects.panoptic_deeplab import add_panoptic_deeplab_config  # noqa
+    # add_panoptic_deeplab_config(cfg)
+    cfg.merge_from_file(args.config_file)
+    cfg.merge_from_list(args.opts)
+
+    # Set score_threshold for builtin models
+    cfg.MODEL.RETINANET.SCORE_THRESH_TEST = args.confidence_threshold
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = args.confidence_threshold
+    cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = args.confidence_threshold
+    cfg.freeze()
+    return cfg
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description="Detectron2 panoptic segmentation node")
+    parser.add_argument(
+        "--config-file",
+        default="configs/Misc/panoptic_fpn_R_101_dconv_cascade_gn_3x.yaml",
+        metavar="FILE",
+        help="path to config file",
+    )
+    parser.add_argument(
+        "--detectron2-root",
+        default="~/src/detectron2",
+        metavar="DIR",
+        help="path to detectron2 root",
+    )
+    parser.add_argument(
+        "--save-masked-image",
+        action="store_true",
+        help="Save the original image and the masked image."
+        "Masking the image will require significant more resources",
+    )
+    parser.add_argument(
+        "--confidence-threshold",
+        type=float,
+        default=0.5,
+        help="Minimum score for instance predictions to be shown",
+    )
+    parser.add_argument(
+        "--opts",
+        help="Modify config options using the command-line 'KEY VALUE' pairs",
+        default=[
+            "MODEL.WEIGHTS",
+            "detectron2://Misc/panoptic_fpn_R_101_dconv_cascade_gn_3x/139797668/model_final_be35db.pkl",
+        ],
+        nargs=argparse.REMAINDER,
+    )
+    return parser
+
+
+if __name__ == "__main__":
+    mp.set_start_method("spawn", force=True)
+    rospy.init_node("label_node")
+    my_argv = rospy.myargv()
+    args = get_parser().parse_args(my_argv[1:])
+    args = resolve_args_config_file(args)
+
+    setup_logger(name="fvcore")
+    rospy.loginfo("Arguments: " + str(args))
+
+    cfg = setup_cfg(args)
+
+    annotator = D2AnnotatorNode(cfg, save_masked_image=args.save_masked_image, service_name="annotate")
+
+    rospy.spin()
