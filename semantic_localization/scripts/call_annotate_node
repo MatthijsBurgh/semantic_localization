@@ -2,6 +2,8 @@
 
 import cv2
 import numpy as np
+import os.path
+import sys
 
 from detectron2.data.detection_utils import read_image
 
@@ -11,7 +13,11 @@ from tue_msgs.srv import GetMaskedImage, GetMaskedImageRequest, GetMaskedImageRe
 from semantic_localization.utils.conversions import _get_cv_bridge
 
 if __name__ == "__main__":
-    image = read_image("/home/matthijs/Pictures/vlcsnap-2021-11-22-13h17m11s628.png")
+    image_path = "~/Pictures/vlcsnap-2021-11-22-13h17m11s628.png"
+    if len(sys.argv) > 1:
+        image_path = sys.argv[-1]
+    image_path = os.path.expanduser(image_path)
+    image = read_image(image_path)
 
     srv_proxy = rospy.ServiceProxy("annotate", GetMaskedImage)
 
