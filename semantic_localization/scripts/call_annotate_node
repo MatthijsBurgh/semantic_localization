@@ -13,9 +13,12 @@ from tue_msgs.srv import GetMaskedImage, GetMaskedImageRequest, GetMaskedImageRe
 from semantic_localization.utils.conversions import _get_cv_bridge
 
 if __name__ == "__main__":
+    rospy.init_node("call_annotate_node")
+    my_argv = rospy.myargv()
+
     image_path = "~/Pictures/vlcsnap-2021-11-22-13h17m11s628.png"
-    if len(sys.argv) > 1:
-        image_path = sys.argv[-1]
+    if len(my_argv) > 1:
+        image_path = my_argv[-1]
     image_path = os.path.expanduser(image_path)
     image = read_image(image_path)
 
