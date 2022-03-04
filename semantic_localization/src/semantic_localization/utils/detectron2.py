@@ -163,7 +163,7 @@ class D2AnnotatorNode(D2Annotator):
 
         return MaskedImage(image=uint_np_ndarray_to_mono_imgmsg(output_image), labels=output_labels)
 
-    def srv_callback(self, req: GetMaskedImageRequest) -> MaskedImage:
+    def srv_callback(self, req: GetMaskedImageRequest) -> GetMaskedImageResponse:
         return GetMaskedImageResponse(output_image=self.callback(req.input_image))
 
     def topic_callback(self, msg: Image) -> None:
