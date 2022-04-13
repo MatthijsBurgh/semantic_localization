@@ -113,11 +113,11 @@ class D2Annotator:
 
         filename_original = f"{filename_base}_original.jpg"
         rospy.logdebug(f"Saving original image to {filename_original}")
-        # Convert image from BGR format to RGB format.
-        cv2.imwrite(filename_original, image[:, :, ::-1])
+        # Image should be BGR, which is also required by cv2.imwrite
+        cv2.imwrite(filename_original, image)
 
         vis_output = None
-        visualizer = Visualizer(image, self.metadata, instance_mode=self.instance_mode)
+        visualizer = Visualizer(image[:, :, ::-1], self.metadata, instance_mode=self.instance_mode)
         if "panoptic_seg" in predictions:
             panoptic_seg, segments_info = predictions["panoptic_seg"]
             vis_output = visualizer.draw_panoptic_seg(panoptic_seg.to(self.cpu_device), segments_info)
