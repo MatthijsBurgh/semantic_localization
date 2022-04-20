@@ -20,7 +20,7 @@ if __name__ == "__main__":
     if len(my_argv) > 1:
         image_path = my_argv[-1]
     image_path = os.path.expanduser(image_path)
-    image = read_image(image_path)
+    image = read_image(image_path, "BGR")
 
     srv_proxy = rospy.ServiceProxy("annotate", GetMaskedImage)
 
