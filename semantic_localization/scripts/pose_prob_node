@@ -1,0 +1,53 @@
+#! /usr/bin/env python
+import io
+from contextlib import redirect_stdout
+from numpy import linspace
+
+import rospy
+import tf2_ros
+
+from geometry_msgs.msg import PoseStamped
+from pykdl_ros import FrameStamped
+
+# noinspection PyUnresolvedReferences
+import tf2_geometry_msgs
+
+# noinspection PyUnresolvedReferences
+import tf2_pykdl_ros
+
+from tue_msgs.srv import PoseProbability, PoseProbabilityRequest, PoseProbabilityResponse
+
+
+class PoseProbNode:
+    def __init__(self):
+        self._srv = rospy.ServiceProxy("particle_pose_prob", PoseProbability)
+        self._probs = []
+
+    def _pose_prob(self, pose: PoseStamped) -> float:
+        req = PoseProbabilityRequest(pose=pose)
+        try:
+            res = self._srv.call(req)  # type: PoseProbabilityResponse
+            rospy.logdebug(f"Probability of {pose=}: {res.probability}")
+            return res.probability
+        except Exception as e:
+            rospy.logerr(f"Could not get a probability for {pose=}: {e}")
+            return -1
+
+    def collect_probs(
+        self, x_min, x_max, y_min, y_max, th_min, th_max, frame_id="base_link", x_steps=10, y_steps=10, th_steps=5
+    ):
+        for x in linspace(x_min, x_max, x_steps):
+            for y in linspace(y_min, y_max, y_steps):
+                for th in linspace(th_min, th_max, th_steps):
+                    with redirect_stdout(io.StringIO()):
+                        pose = FrameStamped.from_xyz_rpy(x, y, 0, 0, 0, th, rospy.Time(), frame_id)
+                    prob = self._pose_prob(tf2_ros.convert(pose, PoseStamped))
+                    self._probs.append({"x": x, "y": y, "th": th, "prob": prob})
+                    rospy.loginfo(self._probs[-1])
+
+
+if __name__ == "__main__":
+    rospy.init_node("pose_prob_node")
+
+    node = PoseProbNode()
+    node.collect_probs(-5, 5, -5, 5, 0, 0.1, th_steps=1)
