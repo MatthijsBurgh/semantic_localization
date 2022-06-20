@@ -1,6 +1,9 @@
 #! /usr/bin/env python
+import csv
 import io
+import os
 from contextlib import redirect_stdout
+from datetime import datetime
 from numpy import linspace
 
 import rospy
@@ -25,17 +28,24 @@ class PoseProbNode:
 
     def _pose_prob(self, pose: PoseStamped) -> float:
         req = PoseProbabilityRequest(pose=pose)
-        try:
-            res = self._srv.call(req)  # type: PoseProbabilityResponse
-            rospy.logdebug(f"Probability of {pose=}: {res.probability}")
-            return res.probability
-        except Exception as e:
-            rospy.logerr(f"Could not get a probability for {pose=}: {e}")
-            return -1
+        errors = []
+        for _ in range(5):
+            try:
+                res = self._srv.call(req)  # type: PoseProbabilityResponse
+                rospy.logdebug(f"Probability of {pose=}: {res.probability}")
+                return res.probability
+            except Exception as e:
+                errors.append(f"{type(e)}: {e}")
+                rospy.logdebug(f"Could not get a probability for {pose=}: {errors[-1]}")
+                rospy.sleep(0.1)
+        else:
+            msgs = "\n".join(errors)
+            rospy.logerr(f"Could not get a probability for {pose=}: {msgs}")
 
     def collect_probs(
-        self, x_min, x_max, y_min, y_max, th_min, th_max, frame_id="base_link", x_steps=10, y_steps=10, th_steps=5
+        self, x_min, x_max, y_min, y_max, th_min, th_max, frame_id="base_footprint", x_steps=10, y_steps=10, th_steps=5
     ):
+        rate = rospy.Rate(2)
         for x in linspace(x_min, x_max, x_steps):
             for y in linspace(y_min, y_max, y_steps):
                 for th in linspace(th_min, th_max, th_steps):
@@ -44,6 +54,25 @@ class PoseProbNode:
                     prob = self._pose_prob(tf2_ros.convert(pose, PoseStamped))
                     self._probs.append({"x": x, "y": y, "th": th, "prob": prob})
                     rospy.loginfo(self._probs[-1])
+                    rate.sleep()
+
+    def write_csv(self, csv_filename=""):
+        if not self._probs:
+            rospy.logerr("No probs stored, so nothing to write to csv-file")
+            return
+
+        if not csv_filename:
+            csv_filename = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.csv")
+        if not csv_filename.endswith(".csv"):
+            rospy.logwarn(f"CSV-filename not ending with '.csv': {csv_filename}")
+
+        csv_file_dir = os.path.join(os.path.expanduser("~"), "ros", "data", "pose_prob")
+        os.makedirs(csv_file_dir, exist_ok=True)
+        with open(os.path.join(csv_file_dir, csv_filename), "w") as f:
+            rospy.loginfo(f"Writing to data to: {f.name}")
+            writer = csv.DictWriter(f, fieldnames=self._probs[0].keys())
+            writer.writeheader()
+            writer.writerows(self._probs)
 
 
 if __name__ == "__main__":
@@ -51,3 +80,4 @@ if __name__ == "__main__":
 
     node = PoseProbNode()
     node.collect_probs(-5, 5, -5, 5, 0, 0.1, th_steps=1)
+    node.write_csv()
