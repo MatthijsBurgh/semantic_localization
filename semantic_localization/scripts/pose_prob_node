@@ -43,9 +43,9 @@ class PoseProbNode:
             rospy.logerr(f"Could not get a probability for {pose=}: {msgs}")
 
     def collect_probs(
-        self, x_min, x_max, y_min, y_max, th_min, th_max, frame_id="base_footprint", x_steps=10, y_steps=10, th_steps=5
+        self, x_min, x_max, y_min, y_max, th_min, th_max, frame_id="base_footprint", x_steps=11, y_steps=11, th_steps=6
     ):
-        rate = rospy.Rate(2)
+        rate = rospy.Rate(10)
         for x in linspace(x_min, x_max, x_steps):
             for y in linspace(y_min, y_max, y_steps):
                 for th in linspace(th_min, th_max, th_steps):
@@ -79,5 +79,5 @@ if __name__ == "__main__":
     rospy.init_node("pose_prob_node")
 
     node = PoseProbNode()
-    node.collect_probs(-5, 5, -5, 5, 0, 0.1, th_steps=1)
+    node.collect_probs(-5, 5, -1-0.3, 1-0.3, 0, 0.1, x_steps=31, y_steps=31, th_steps=1)
     node.write_csv()
