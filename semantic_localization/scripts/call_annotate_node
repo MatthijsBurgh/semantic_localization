@@ -3,7 +3,6 @@
 import cv2
 import numpy as np
 import os.path
-import sys
 
 from detectron2.data.detection_utils import read_image
 
