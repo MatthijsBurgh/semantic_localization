@@ -76,8 +76,9 @@ class PoseProbNode:
 
 
 if __name__ == "__main__":
+    from math import pi
     rospy.init_node("pose_prob_node")
 
     node = PoseProbNode()
-    node.collect_probs(-5, 5, -1-0.3, 1-0.3, 0, 0.1, x_steps=31, y_steps=31, th_steps=1)
+    node.collect_probs(0, 0.1, -1, 1, -pi/2, pi/2, x_steps=1, y_steps=31, th_steps=51)
     node.write_csv()
