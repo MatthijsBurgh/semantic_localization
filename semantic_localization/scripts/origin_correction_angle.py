@@ -125,7 +125,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     data_directory = args.data_directory
-    file = path.join(data_directory, "2023-03-13-15-17-20", "optitrack.csv")
+    file = path.join(data_directory, "2023-03-10-16-39-47", "optitrack.csv")
+    # file = path.join(data_directory, "2023-03-13-15-17-20", "optitrack.csv")
     file_data = read_csv(file)
     input_data = convert_list_of_dicts_to_dict_of_lists(file_data)
     input_mean = mean(input_data["z"])
@@ -133,7 +134,7 @@ if __name__ == "__main__":
 
     means = []
     stds = []
-    angles = np.arange(0, 15, 0.25)
+    angles = np.arange(0, 15.25, 0.25)
     for angle in angles:
         correction = kdl.Frame.Identity()  # type: kdl.Frame
         correction.M.DoRotY(angle/180*pi)
@@ -147,15 +148,11 @@ if __name__ == "__main__":
         stds.append(output_std)
         print(f"Input mean: {input_mean} std: {input_std}")
         print(f"Output mean: {output_mean} std: {output_std}")
-        import matplotlib.pyplot as plt
-        # plt.plot(input_data["x"], label="input_x")
-        # plt.plot(output_data["x"], label="output_x")
-        # plt.plot(input_data["y"], label="input_y")
-        # plt.plot(output_data["y"], label="output_y")
-        plt.plot(input_data["z"], label="input_z")
-        plt.plot(output_data["z"], label="output_z")
-        plt.legend()
-        plt.title(f"Angle: {angle},\nInput mean: {input_mean} std: {input_std},\nOutput mean: {output_mean} std: {output_std}")
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # plt.plot(input_data["z"], label="input_z")
+        # plt.plot(output_data["z"], label="output_z")
+        # plt.legend()
+        # plt.title(f"Angle: {angle},\nInput mean: {input_mean} std: {input_std},\nOutput mean: {output_mean} std: {output_std}")
+        # plt.show()
 
     write_csv(output_file, {"angle": angles, "mean": means, "std": stds})
