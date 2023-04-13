@@ -127,6 +127,7 @@ if __name__ == "__main__":
     data_directory = args.data_directory
     file = path.join(data_directory, "2023-03-10-16-39-47", "optitrack.csv")
     # file = path.join(data_directory, "2023-03-13-15-17-20", "optitrack.csv")
+    output_file = path.join(path.dirname(file), "correction_angles.csv")
     file_data = read_csv(file)
     input_data = convert_list_of_dicts_to_dict_of_lists(file_data)
     input_mean = mean(input_data["z"])
@@ -138,7 +139,6 @@ if __name__ == "__main__":
     for angle in angles:
         correction = kdl.Frame.Identity()  # type: kdl.Frame
         correction.M.DoRotY(angle/180*pi)
-        output_file = path.join(path.dirname(file), "correction_angles.csv")
         print(f"Processing {file=}\n{angle=}")
         output_data = correct_pose(deepcopy(file_data), correction.Inverse())
         output_data = convert_list_of_dicts_to_dict_of_lists(output_data)
