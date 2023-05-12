@@ -105,7 +105,7 @@ class D2Annotator:
         return output_image, output_labels
 
     def save_images(self, image, predictions: dict) -> None:
-        image_name = f"detectron2_{datetime.now().strftime('%y-%m-%d_%H:%M:%S')}"
+        image_name = f"detectron2_{datetime.now().strftime('%y-%m-%d_%H-%M-%S')}"
         file_dirname = os.path.expanduser("~/ros/data/semantic_localization")
         filename_base = os.path.join(file_dirname, image_name)
         if not os.path.isdir(file_dirname):
